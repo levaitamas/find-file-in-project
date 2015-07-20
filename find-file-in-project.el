@@ -188,6 +188,11 @@ This overrides variable `ffip-project-root' when set.")
         (progn (message "No project was defined for the current file.")
                nil))))
 
+(defun ffip--create-keyword-for-find-dash-name-paramater (keyword)
+  (let ((rlt ""))
+    (if keyword (setq rlt (concat "-name \"*" keyword "*\"" )))
+    rlt))
+
 (defun ffip--guess-gnu-find ()
   (let ((rlt "find"))
     (if (eq system-type 'windows-nt)
@@ -256,7 +261,7 @@ directory they are found in so that they are unique."
                       (if ffip-find-executable ffip-find-executable (ffip--guess-gnu-find))
                       (ffip-prune-patterns)
                       (ffip-join-patterns)
-                      (if keyword (concat "-name \"*" keyword "*\"") "")
+                      (ffip--create-keyword-for-find-dash-name-paramater keyword)
                       (if (and NUM (> NUM 0)) (format "-mtime -%d" NUM) "")
                       ffip-find-options
                       (ffip-limit-find-results)))
