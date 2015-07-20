@@ -211,15 +211,14 @@ This overrides variable `ffip-project-root' when set.")
           (setq rlt "e:\\\\cygwin\\\\bin\\\\find"))))
     rlt))
 
-(defun ffip-join-patterns ()
+(defun ffip--join-patterns (patterns)
   "Turn `ffip-patterns' into a string that `find' can use."
   (if ffip-patterns
-      (format "\\( %s \\)"
-              (mapconcat (lambda (pat) (format "-name \"%s\"" pat))
-                         ffip-patterns " -or "))
+      (format "\\( %s \\)" (mapconcat (lambda (pat) (format "-name \"%s\"" pat))
+                         patterns " -or "))
     ""))
 
-(defun ffip-prune-patterns ()
+(defun ffip--prune-patterns ()
   "Turn `ffip-prune-patterns' into a string that `find' can use."
   (mapconcat (lambda (pat) (format "-name \"%s\"" pat))
              ffip-prune-patterns " -or "))
@@ -259,8 +258,8 @@ directory they are found in so that they are unique."
     ;; make the prune pattern more general
     (setq cmd (format "%s . \\( %s \\) -prune -o -type f %s %s %s %s -print %s"
                       (if ffip-find-executable ffip-find-executable (ffip--guess-gnu-find))
-                      (ffip-prune-patterns)
-                      (ffip-join-patterns)
+                      (ffip--prune-patterns)
+                      (ffip--join-patterns ffip-patterns)
                       (ffip--create-keyword-for-find-dash-name-paramater keyword)
                       (if (and NUM (> NUM 0)) (format "-mtime -%d" NUM) "")
                       ffip-find-options
