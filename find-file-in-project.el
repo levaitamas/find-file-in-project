@@ -203,6 +203,7 @@ This overrides variable `ffip-project-root' when set.")
     ;; A => 65, Z => 90
     (if (and (<= 65 c) (<= c 90)) (setq nc (+ c 32)))
     (setq rlt (replace-regexp-in-string "^[a-zA-Z]" (concat "[" (string c nc) "]") keyword t))
+    (if (and rlt ffip-debug) (message "ffip-filename-identity called. rlt=%s" rlt))
     rlt))
 
 (defun ffip-filename-camelcase-to-dashes (keyword)
@@ -211,22 +212,44 @@ This overrides variable `ffip-project-root' when set.")
         (old-flag case-fold-search))
     (setq case-fold-search nil)
     ;; case sensitive replace
-    (setq rlt (downcase (replace-regexp-in-string "\\([A-Z]\\)" "_\\1" keyword)))
+    (setq rlt (downcase (replace-regexp-in-string "\\([a-z]\\)\\([A-Z]\\)" "\\1-\\2" keyword)))
     (setq case-fold-search old-flag)
-    (if (string= rlt keyword) (setq rlt nil))
+
+    (if (string= rlt (downcase keyword)) (setq rlt nil))
+
+    (if (and rlt ffip-debug)
+        (message "ffip-filename-camelcase-to-dashes called. rlt=%s" rlt))
     rlt))
 
 (defun ffip-filename-dashes-to-camelcase (keyword)
   " hello-world => [Hh]elloWorld "
   (let (rlt)
     (setq rlt (mapconcat '(lambda (s) (capitalize s)) (split-string keyword "-") ""))
-    (if (string= rlt keyword) (setq rlt nil)
+
+    (if (string= rlt (capitalize keyword)) (setq rlt nil)
       (setq rlt (ffip-filename-identity rlt)))
+
+    (if (and rlt ffip-debug)
+        (message "ffip-filename-dashes-to-camelcase called. rlt=%s" rlt))
+
     rlt))
 
 (defun ffip--create-filename-pattern-for-gnufind (keyword)
   (let ((rlt ""))
-    (if keyword (setq rlt (concat "-name \"*" keyword "*\"" )))
+    (cond
+     ((not ffip-filename-rules)
+      (if keyword (setq rlt (concat "-name \"*" keyword "*\"" ))))
+     (t
+      (dolist (f ffip-filename-rules rlt)
+        (let (tmp)
+          (setq tmp (funcall f keyword))
+          (when tmp
+            (message "rlt=%s" rlt)
+            (setq rlt (concat rlt (unless (string= rlt "") " -o") " -name \"*" tmp "*\"")))))
+      (unless (string= "" rlt)
+        (setq rlt (concat "\\(" rlt " \\)")))
+      ))
+    (if ffip-debug (message "ffip--create-filename-pattern-for-gnufind called. rlt=%s" rlt))
     rlt))
 
 (defun ffip--guess-gnu-find ()
