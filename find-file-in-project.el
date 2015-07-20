@@ -79,6 +79,11 @@
 
 (require 'cl)
 
+(defvar ffip-keyword-rules
+  '(ffip-keyword-identity
+    ffip-keyword-dashes-to-camelcase
+    ffip-keyword-camelcase-to-dashes))
+
 (defvar ffip-find-executable nil "Path of GNU find. If nil, we will find `find' path automatically")
 
 (defvar ffip-project-file ".git"
@@ -188,7 +193,38 @@ This overrides variable `ffip-project-root' when set.")
         (progn (message "No project was defined for the current file.")
                nil))))
 
-(defun ffip--create-keyword-for-find-dash-name-paramater (keyword)
+(defun ffip-keyword-identity (keyword)
+  " HelloWorld => [Hh]elloWorld "
+  (let (rlt
+        (c (elt keyword 0))
+        nc)
+    ;; a => 97, z => 122
+    (if (and (<= 97 c) (<= c 122)) (setq nc (- c 32)))
+    ;; A => 65, Z => 90
+    (if (and (<= 65 c) (<= c 90)) (setq nc (+ c 32)))
+    (setq rlt (replace-regexp-in-string "^[a-zA-Z]" (concat "[" (string c nc) "]") keyword t))
+    rlt))
+
+(defun ffip-keyword-camelcase-to-dashes (keyword)
+  " HelloWorld => hello-world"
+  (let (rlt
+        (old-flag case-fold-search))
+    (setq case-fold-search nil)
+    ;; case sensitive replace
+    (setq rlt (downcase (replace-regexp-in-string "\\([A-Z]\\)" "_\\1" keyword)))
+    (setq case-fold-search old-flag)
+    (if (string= rlt keyword) (setq rlt nil))
+    rlt))
+
+(defun ffip-keyword-dashes-to-camelcase (keyword)
+  " hello-world => [Hh]elloWorld "
+  (let (rlt)
+    (setq rlt (mapconcat '(lambda (s) (capitalize s)) (split-string keyword "-") ""))
+    (if (string= rlt keyword) (setq rlt nil)
+      (setq rlt (ffip-keyword-identity rlt)))
+    rlt))
+
+(defun ffip--create-filename-pattern-for-gnufind (keyword)
   (let ((rlt ""))
     (if keyword (setq rlt (concat "-name \"*" keyword "*\"" )))
     rlt))
@@ -260,7 +296,7 @@ directory they are found in so that they are unique."
                       (if ffip-find-executable ffip-find-executable (ffip--guess-gnu-find))
                       (ffip--prune-patterns)
                       (ffip--join-patterns ffip-patterns)
-                      (ffip--create-keyword-for-find-dash-name-paramater keyword)
+                      (ffip--create-filename-pattern-for-gnufind keyword)
                       (if (and NUM (> NUM 0)) (format "-mtime -%d" NUM) "")
                       ffip-find-options
                       (ffip-limit-find-results)))
