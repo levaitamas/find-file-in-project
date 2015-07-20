@@ -79,10 +79,10 @@
 
 (require 'cl)
 
-(defvar ffip-keyword-rules
-  '(ffip-keyword-identity
-    ffip-keyword-dashes-to-camelcase
-    ffip-keyword-camelcase-to-dashes))
+(defvar ffip-filename-rules
+  '(ffip-filename-identity
+    ffip-filename-dashes-to-camelcase
+    ffip-filename-camelcase-to-dashes))
 
 (defvar ffip-find-executable nil "Path of GNU find. If nil, we will find `find' path automatically")
 
@@ -193,7 +193,7 @@ This overrides variable `ffip-project-root' when set.")
         (progn (message "No project was defined for the current file.")
                nil))))
 
-(defun ffip-keyword-identity (keyword)
+(defun ffip-filename-identity (keyword)
   " HelloWorld => [Hh]elloWorld "
   (let (rlt
         (c (elt keyword 0))
@@ -205,7 +205,7 @@ This overrides variable `ffip-project-root' when set.")
     (setq rlt (replace-regexp-in-string "^[a-zA-Z]" (concat "[" (string c nc) "]") keyword t))
     rlt))
 
-(defun ffip-keyword-camelcase-to-dashes (keyword)
+(defun ffip-filename-camelcase-to-dashes (keyword)
   " HelloWorld => hello-world"
   (let (rlt
         (old-flag case-fold-search))
@@ -216,12 +216,12 @@ This overrides variable `ffip-project-root' when set.")
     (if (string= rlt keyword) (setq rlt nil))
     rlt))
 
-(defun ffip-keyword-dashes-to-camelcase (keyword)
+(defun ffip-filename-dashes-to-camelcase (keyword)
   " hello-world => [Hh]elloWorld "
   (let (rlt)
     (setq rlt (mapconcat '(lambda (s) (capitalize s)) (split-string keyword "-") ""))
     (if (string= rlt keyword) (setq rlt nil)
-      (setq rlt (ffip-keyword-identity rlt)))
+      (setq rlt (ffip-filename-identity rlt)))
     rlt))
 
 (defun ffip--create-filename-pattern-for-gnufind (keyword)
